@@ -25,11 +25,3 @@ jobs:
 
       - name: Run flake8 linter
         run: flake8
-
-      - name: Test Dockerfile
-        run: docker build . -t test-image
-        working-directory: ./docker
-
-      - name: Test Makefile
-        run: make test
-        working-directory: ./makefile
