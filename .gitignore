@@ -1,0 +1,5 @@
+/.idea/
+/alembic/versions/
+/hubfastapi-storage/
+/postgres-storage/
+/testing.py

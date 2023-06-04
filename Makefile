@@ -12,4 +12,3 @@ create-image:
 
 compose:
 	docker-compose up
-
