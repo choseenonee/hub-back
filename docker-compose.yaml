@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "asdfghj1"
+    healthcheck:
+      test: "psql postgres postgres"
+      interval: 3s
+    volumes:
+      - ./postgres-storage:/data
+  hubapi:
+    image:
+      hubapi
+    ports:
+      - "80:80"
+    volumes:
+      - ./hubfastapi-storage:/data
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  postgres-storage:
+  fastapi-storage:
