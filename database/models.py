@@ -68,11 +68,13 @@ class FavUser(Base):
     __tablename__ = "favourite_user"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), index=True)
-    fav_user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    fav_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
 
-    main_user = relationship("User", foreign_keys=[user_id], backref="fav_users")
-    fav_user = relationship("User", foreign_keys=[fav_user_id])
+    main_user = relationship("User", foreign_keys=[user_id], backref="fav_users", cascade="all, delete",
+        passive_deletes=True)
+    fav_user = relationship("User", foreign_keys=[fav_user_id], backref="subscribers", cascade="all, delete",
+        passive_deletes=True)
 
 
 # Лучше использовать список всех контактов сразу у юзера.

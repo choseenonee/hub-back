@@ -1,8 +1,11 @@
 /alembic/versions/
 /hubfastapi-storage/
 /postgres-storage/
-/testing.py
 /.idea/
 /pycache/
 /.venv/
 /venv/
+/__pycache__/
+.venv
+venv/
+testing.py

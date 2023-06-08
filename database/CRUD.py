@@ -31,12 +31,28 @@ def get_user_auth(db: Session, user_id: int | None = None, email: str | None = N
         auth = db.query(models.Authorization).filter(models.Authorization.phone_number == phone_number).first()
     elif user_id:
         auth = db.query(models.Authorization).filter(models.Authorization.user_id == user_id).first()
-    # print(auth.nickname)
     return auth
 
 
 def delete_user(db: Session, user_id: int | None = None, email: str | None = None, nickname: str | None = None, phone_number: str | None = None):
     auth = get_user_auth(db, user_id=user_id, email=email, nickname=nickname, phone_number=phone_number)
+    if not auth:
+        raise HTTPException(status_code=404, detail='user not found')
+    try:
+        for fav_colab in auth.user.fav_colabs:
+            delete_fav_colab(db=db, fav_colab_id=fav_colab.id)
+    except:
+        pass
+    try:
+        for fav_archive in auth.user.fav_archives:
+            delete_fav_archive(db=db, fav_archive_id=fav_archive.id)
+    except:
+        pass
+    try:
+        for tag in auth.user.tags:
+            delete_tag(db=db, tag_id=tag.id)
+    except:
+        pass
     try:
         db.delete(auth.user)
     except Exception as e:
@@ -95,16 +111,20 @@ def create_tag(db: Session, tag: schemas.CreateTag):
 def get_users_by_tag(db: Session, tag: str):
     tags = db.query(models.Tag).filter(models.Tag.tag == tag).all()
     # print(tags)
+    if len(tags) == 0:
+        raise HTTPException(status_code=404, detail='tags not found')
     users = [tag.user for tag in tags]
     return users
 
 
 def create_fav_colab(db: Session, fav_colab: schemas.CreateFavColab):
     db_colab = models.FavColab(user_id=fav_colab.user_id, colab_id=fav_colab.colab_id)
-    db_user_fav_colabs = [favcolab.colab_id for favcolab in db.query(models.User).filter(models.User.id == fav_colab.user_id).first().fav_colabs]
-    print(db_user_fav_colabs)
-    if fav_colab.colab_id in db_user_fav_colabs:
-        raise HTTPException(status_code=400, detail='you are trying to make a duplicate!!!')
+    try:
+        db_user_fav_colabs = [favcolab.colab_id for favcolab in db.query(models.User).filter(models.User.id == fav_colab.user_id).first().fav_colabs]
+        if fav_colab.colab_id in db_user_fav_colabs:
+            raise HTTPException(status_code=400, detail='you are trying to make a duplicate!!!')
+    except Exception as e:
+        print(e)
     try:
         db.add(db_colab)
         db.commit()
@@ -117,16 +137,20 @@ def create_fav_colab(db: Session, fav_colab: schemas.CreateFavColab):
 
 def get_users_by_colab_id(db: Session, colab_id: int):
     fav_colabs = db.query(models.FavColab).filter(models.FavColab.colab_id == colab_id).all()
+    if len(fav_colabs) == 0:
+        raise HTTPException(status_code=404, detail='fav colabs not found')
     users = [fav_colab.user for fav_colab in fav_colabs]
     return users
 
 
 def create_fav_archive(db: Session, fav_archive: schemas.CreateFavArchive):
     db_archive = models.FavArchive(user_id=fav_archive.user_id, archive_id=fav_archive.archive_id)
-    db_user_fav_archives = [favarchive.archive_id for favarchive in db.query(models.User).filter(models.User.id == fav_archive.user_id).first().fav_archives]
-    print(db_user_fav_archives)
-    if fav_archive.archive_id in db_user_fav_archives:
-        raise HTTPException(status_code=400, detail='you are trying to make a duplicate!!!')
+    try:
+        db_user_fav_archives = [favarchive.archive_id for favarchive in db.query(models.User).filter(models.User.id == fav_archive.user_id).first().fav_archives]
+        if fav_archive.archive_id in db_user_fav_archives:
+            raise HTTPException(status_code=400, detail='you are trying to make a duplicate!!!')
+    except:
+        pass
     try:
         db.add(db_archive)
         db.commit()
@@ -145,9 +169,12 @@ def get_users_by_archive_id(db: Session, archive_id: int):
 
 def create_fav_user(db: Session, fav_user: schemas.CreateFavUser):
     db_fav_user = models.FavUser(user_id=fav_user.user_id, fav_user_id=fav_user.fav_user_id)
-    db_user_fav_users = [fav_user.fav_user_id for fav_user in db.query(models.User).filter(models.User.id == fav_user.user_id).first().fav_users]
-    if fav_user.fav_user_id in db_user_fav_users:
-        raise HTTPException(status_code=400, detail='you are trying to make a duplicate!!!')
+    try:
+        db_user_fav_users = [fav_user.fav_user_id for fav_user in db.query(models.User).filter(models.User.id == fav_user.user_id).first().fav_users]
+        if fav_user.fav_user_id in db_user_fav_users:
+            raise HTTPException(status_code=400, detail='you are trying to make a duplicate!!!')
+    except Exception as e:
+        print(e)
     try:
         db.add(db_fav_user)
         db.commit()
@@ -206,4 +233,19 @@ def delete_fav_user(db: Session, fav_user_id: int):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail='failed to delete fav user')
+    return 200
+
+
+def delete_tag(db: Session, tag_id: int):
+    try:
+        db_tag = db.query(models.Tag).filter(models.Tag.id == tag_id).first()
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=404, detail='tag not found')
+    try:
+        db.delete(db_tag)
+        db.commit()
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail='failed to delete tag')
     return 200

@@ -31,7 +31,6 @@ def get_user(db: Session = Depends(get_db), user_id: int | None = None, email: s
         raise HTTPException(status_code=500, detail='failed to get user')
     if auth is None:
         raise HTTPException(status_code=404, detail='user not found')
-    # print([(key, auth.user.tags[0].__dict__[key]) for key in auth.user.tags[0].__dict__ if (key != '_sa_adapter' and key != '_sa_instance_state')])
     return auth.user
 
 
@@ -64,14 +63,20 @@ def create_tag(tag: schemas.CreateTag, db: Session = Depends(get_db)):
     return CRUD.create_tag(db, tag)
 
 
+@router.delete('/delete_tag')
+def delete_tag(tag_id: int, db: Session = Depends(get_db)):
+    return CRUD.delete_tag(db=db, tag_id=tag_id)
+
+
 @router.get('/get_users_by_tag', response_model=List[schemas.User])
 def get_users_by_tag(tag: str, db: Session = Depends(get_db)):
     return CRUD.get_users_by_tag(db=db, tag=tag)
 
 
 @router.post('/create_fav/', response_model=Union[schemas.FavColab, schemas.FavArchive, schemas.FavUser])
-def create_fav(fav_colab: Union[schemas.CreateFavColab, None], fav_archive: Union[schemas.CreateFavArchive, None],
-               fav_user: Union[schemas.CreateFavUser, None], db: Session = Depends(get_db)):
+def create_fav(fav_archive: schemas.CreateFavArchive | None = None,
+               fav_user: schemas.CreateFavUser | None = None, db: Session = Depends(get_db),
+               fav_colab: schemas.CreateFavColab | None = None):
     if fav_colab is not None:
         return CRUD.create_fav_colab(db, fav_colab=fav_colab)
     elif fav_archive is not None:
